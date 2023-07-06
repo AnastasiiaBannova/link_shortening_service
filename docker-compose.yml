@@ -1,0 +1,39 @@
+version: '3.7'
+
+x-app-config: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: link_shortening_service:last
+  restart: unless-stopped
+  volumes:
+    - .:/app
+
+x-app-environment: &app-environment
+  PYTHONUNBUFFERED: 1
+  LOGLEVEL: INFO
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+
+services:
+  postgres:
+    image: postgres:12
+    container_name: link_shortening_service_postgres
+    environment:
+      <<: *app-environment
+    ports:
+      - 5432:5432
+
+  web_app:
+    <<: *app
+    environment:
+      <<: *app-environment
+    container_name: link_shortening_service_web_app
+    ports:
+      - 8080:8080
+    command: 'uvicorn link_shortening_service.main:app --host=0.0.0.0 --port=8080'
+    depends_on:
+      - postgres
